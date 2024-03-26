@@ -1,0 +1,24 @@
+{
+  "name": "this_work",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
+    "@types/lodash": "^4.17.0",
+    "@types/serviceworker": "^0.0.84",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "lodash": "^4.17.21",
+    "webpack": "^5.90.3"
+  }
+}
