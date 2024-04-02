@@ -153,25 +153,59 @@ fetch(
   });
 */
 
+function isOnline() {
+  const connectionStatus = document.querySelector(
+    "div#connectionStatus"
+  )! as HTMLDivElement;
+  if (navigator.onLine) {
+    connectionStatus.innerText = "Anda sedang Online!";
+  } else {
+    connectionStatus.innerText =
+      "Saat ini anda sedang Offline, Request anda masuk antrian dan akan sinkron segera setelah anda Online";
+  }
+}
+
 (() => {
+  window.addEventListener("online", isOnline);
+  window.addEventListener("offline", isOnline);
+  isOnline();
+
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       // Karena dilihat dari posisi index.html (pemanggilan service workernya),
       // maka posisi yang benarnya itu ada di ./service-worker.js
-      navigator.serviceWorker.register("./service-worker.js").then(
-        (regis) => {
+      navigator.serviceWorker
+        .register("./service-worker.js")
+        .then((regis) => {
           console.log(regis);
-        },
-        (err) => {
-          console.log(err);
-        }
-      );
+          return navigator.serviceWorker.ready;
+        })
+        .then((regis2: any) => {
+          // Register event sync
+          const btnSubmit = document.querySelector(
+            "button#req-button"
+          )! as HTMLButtonElement;
+          btnSubmit.addEventListener("click", () => {
+            regis2.sync
+              .register("image-fetch")
+              .then(() => {
+                console.log("Sync registered!");
+              })
+              .catch(() => {
+                console.log("unable to fetch image!");
+              });
+          });
+        })
+        .catch(() => {
+          console.log("Unable to register service worker!");
+        });
     });
   } else {
     alert("No service worker support in this browser");
   }
 })();
 
+/*
 const btnSave2Cache = document.querySelector(
   "#save-to-cache"
 )! as HTMLButtonElement;
@@ -206,6 +240,57 @@ btnSave2Cache.addEventListener("click", (ev) => {
     );
   });
 });
+*/
+
+// Cached - Cache Then Network
+function startSpinLoadingPage(): void {
+  console.log("Mulai blok halaman... Data sedang dimuat");
+}
+function stopSpinLoadingPage(): void {
+  console.log("Tutup blok halaman... Data sukses dimuat");
+}
+let networkDataReceived = false;
+let sampleUrl =
+  "http://localhost/project-pribadi/sticky-mobile/this_work/php/sample-main.php";
+startSpinLoadingPage();
+
+// Ambil fresh data
+let networkUpdate = fetch(sampleUrl)
+  .then((res) => {
+    return res.json();
+  })
+  .then((data) => {
+    networkDataReceived = true;
+    // lakukan perubahan data ke halaman
+    // updatePage(data);
+    console.log(data);
+  });
+
+// Ambil cache data
+caches
+  .match(sampleUrl)
+  .then((res) => {
+    if (!res) {
+      throw Error("No Data!");
+    }
+    return res.json();
+  })
+  .then((data) => {
+    // Jangan overwrite data terbaru dari network
+    console.log(`Cache data utama ada, isinya: ${JSON.stringify(data)}`);
+    if (!networkDataReceived) {
+      // lakukan perubahan data ke halaman
+      // updatePage(data);
+    }
+  })
+  .catch(() => {
+    // Data tidak ada dicache, ambil dari network
+    return networkUpdate;
+  })
+  .catch(() => {
+    alert("showErrorMessage");
+  })
+  .then(stopSpinLoadingPage);
 
 /**
  * @description Mengenai pengenalan Fetch API (Hal.39) di buku PWA
